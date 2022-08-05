@@ -20,13 +20,26 @@ def arr_resize(
 def hist_equalization(
     arr: np.array,
     bins_count=256,
-) -> np.array:
+) -> tuple:
     arr_hist, bins = np.histogram(arr.flatten(), bins_count, normed=True)
     cdf = arr_hist.cumsum()
     cdf = 255 * cdf / cdf[-1]
 
     new_arr = np.interp(arr.flatten(), bins[:-1], cdf)
     return new_arr.reshape(arr.shape), cdf
+
+
+def image_averaging(
+    images_paths: list[str]
+) -> np.ndarray:
+    average_image = np.array(Image.open(images_path[0]), 'f')
+    for image_path in images_paths[1:]:
+        try:
+            average_image += np.array(Image.open(image_path))
+        except:
+            print(image_path + ' failed to open')
+            average_image /= len(images_paths)
+    return np.array(average_image, 'uint8')
 
 
 if __name__ == '__main__':
