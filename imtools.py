@@ -1,4 +1,5 @@
 import os
+import string
 import numpy as np
 from PIL import Image
 
@@ -21,7 +22,7 @@ def hist_equalization(
     arr: np.array,
     bins_count=256,
 ) -> tuple:
-    arr_hist, bins = np.histogram(arr.flatten(), bins_count, normed=True)
+    arr_hist, bins = np.histogram(arr.flatten(), bins_count)
     cdf = arr_hist.cumsum()
     cdf = 255 * cdf / cdf[-1]
 
@@ -30,9 +31,9 @@ def hist_equalization(
 
 
 def image_averaging(
-    images_paths: list[str]
+    images_paths: list
 ) -> np.ndarray:
-    average_image = np.array(Image.open(images_path[0]), 'f')
+    average_image = np.array(Image.open(images_paths[0]), 'f')
     for image_path in images_paths[1:]:
         try:
             average_image += np.array(Image.open(image_path))
