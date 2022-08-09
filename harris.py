@@ -85,3 +85,70 @@ def plot_harris_points(
     plt.plot([p[1] for p in filtered_coords], [p[0] for p in filtered_coords], '*')
     plt.axis('off')
     plt.show()
+
+
+def get_descriptors(
+    image: np.ndarray,
+    filtered_coords: list,
+    wid=5,
+) -> list:
+    """
+    для каждой точки возвращает значения пикселей в окрестности этой точки шириной 2 * wid + 1
+    (предполагается, что выбирались точки с min_distance > wid)
+    @param image: исходное изображение в виде numpy-массива
+    @param filtered_coords: координаты углов
+    @param wid: полудлина окна (блока изображения)
+    @return: список дескрипторов
+    """
+    desc = []
+    for coords in filtered_coords:
+        patch = image[
+            coords[0]-wid:coords[0]+wid+1,
+            coords[1]-wid:coords[1]+wid+1
+        ].flatten()
+        desc.append(patch)
+    return desc
+
+
+def match_descriptors(
+    desc1: list,
+    desc2: list,
+    threshold=0.5,
+) -> list:
+    """
+    для каждого дескриптора угловой точки на первом изображении находит соответствующую
+    ему точку на втором изображении, применяя нормированную взаимную корреляцию
+    @param desc1: список дескрипторов углов первого изображения
+    @param desc2: список дескрипторов углов второго изображения
+    @param threshold: отсечка
+    @return: список из значений соответствия
+    """
+    n = len(desc1[0])
+    d = - np.ones((len(desc1), len(desc2)))
+    for i, _ in enumerate(desc1):
+        for j, _ in enumerate(desc2):
+            d1 = (desc1[i] - np.mean(desc1[i])) / np.std(desc1[i])
+            d2 = (desc2[j] - np.mean(desc2[j])) / np.std(desc2[j])
+            ncc_value = np.sum(d1 * d2) / (n - 1)
+            if ncc_value > threshold:
+                d[i,j] = ncc_value
+    ndx = np.argsort(-d)
+    match_scores = ndx[:, 0]
+    return match_scores
+
+
+def match_descriptors_twosided(
+    desc1: list,
+    desc2: list,
+    threshold=0.5,
+) -> list:
+    matches_12 = match_descriptors(desc1, desc2, threshold)
+    matches_21 = match_descriptors(desc2, desc1, threshold)
+
+    ndx_12 = np.where(matches_12 >= 0)[0]
+
+    # исключение несимметричных соответствий
+    for n in ndx_12:
+        if matches_21[matches_12[n]] != n:
+            matches_12[n] = -1
+    return matches_12
