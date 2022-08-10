@@ -1,3 +1,4 @@
+import enum
 import numpy as np
 from scipy.ndimage import filters
 import matplotlib.pyplot as plt
@@ -152,3 +153,56 @@ def match_descriptors_twosided(
         if matches_21[matches_12[n]] != n:
             matches_12[n] = -1
     return matches_12
+
+
+def concatenate_images(
+    im1: np.ndarray,
+    im2: np.ndarray,
+) -> np.ndarray:
+    """
+    конкатенация двух изображений в одно новое изображение
+    @param im1: первое изображение в виде numpy-массива
+    @param im2: второе изображение в виде numpy-массива
+    @return: объединённое изображение
+    """
+    rows1 = im1.shape[0]
+    rows2 = im2.shape[0]
+
+    # если количество пиксельных строк в изображениях не совпадают, то дополняем нулями
+    if rows1 < rows2:
+        im1 = np.concatenate((im1, np.zeros((rows2 - rows1, im1.shape[1]))), axis=0)
+    elif rows1 > rows2:
+        im2 = np.concatenate((im2, np.zeros((rows1 - rows2, im2.shape[1]))), axis=0)
+    
+    return np.concatenate((im1, im2), axis=1)
+
+
+def plot_matches(
+    im1: np.ndarray,
+    im2: np.ndarray,
+    locs1: list,
+    locs2: list,
+    matchscores: list,
+    show_below=True,
+) -> None:
+    """
+    вывод изображения, на котором соответственные точки соединены друг с другом
+    @param im1: первое изображение в виде numpy-массива
+    @param im2: второе изображение в виде numpy-массива
+    @param locs1: координаты особых точек на первом изображении
+    @param locs2: координаты особых точек на втором изображении
+    @param matchscores: результат функции match_descriptors
+    @param show_below: необходимо ли показать исходные изображения под картиной соответствия
+    """
+    plt.figure()
+    plt.gray()
+    im3 = concatenate_images(im1, im2)
+    if show_below:
+        im3 = np.vstack((im3, im3))
+    plt.imshow(im3)
+    cols1 = im1.shape[1]
+    for i, m in enumerate(matchscores):
+        if m > 0:
+            plt.plot([locs1[i][1], locs2[m][1] + cols1], [locs1[i][0], locs2[m][0]], 'c')
+    plt.axis('off')
+    plt.show()
