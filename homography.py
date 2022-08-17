@@ -27,15 +27,15 @@ def better_cond(
 
 
 def h_from_points(
-    fp: np.ndarray,
-    tp: np.ndarray,
+    from_points: np.ndarray,
+    to_points: np.ndarray,
 ) -> np.ndarray:
-    assert fp.shape == tp.shape
+    assert from_points.shape == to_points.shape
 
     # обеспечивает хорошую обусловленность для первого изображения
-    fp, c1 = better_cond(fp)
+    fp, c1 = better_cond(from_points)
     # обеспечивает хорошую обусловленность для второго изображения
-    tp, c2 = better_cond(tp)
+    tp, c2 = better_cond(to_points)
 
     # создание матрицы (по две строки для каждой пары соответственных точек)
     nbr_correspondences = fp.shape[1]
@@ -55,15 +55,15 @@ def h_from_points(
 
 
 def haffine_from_points(
-    fp: np.ndarray,
-    tp: np.ndarray,
+    from_points: np.ndarray,
+    to_points: np.ndarray,
 ) -> np.ndarray:
-    assert fp.shape == tp.shape
+    assert from_points.shape == to_points.shape
 
     # для первого изображения
-    fp, c1 = better_cond(fp)
+    fp, c1 = better_cond(from_points)
     # для второго изображения
-    tp, c2 = better_cond(tp)
+    tp, c2 = better_cond(to_points)
 
     a = np.concatenate((fp[:2], tp[:2]), axis=0)
     _, _, v = np.linalg.svd(a.T)
