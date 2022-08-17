@@ -32,9 +32,9 @@ def h_from_points(
 ) -> np.ndarray:
     assert fp.shape == tp.shape
 
-    # для первого изображения
+    # обеспечивает хорошую обусловленность для первого изображения
     fp, c1 = better_cond(fp)
-    # для второго изображения
+    # обеспечивает хорошую обусловленность для второго изображения
     tp, c2 = better_cond(tp)
 
     # создание матрицы (по две строки для каждой пары соответственных точек)
@@ -71,7 +71,7 @@ def haffine_from_points(
     tmp = v[:2].T
     b = tmp[:2]
     c = tmp[2:4]
-    tmp2 = np.concatenate((np.dot(c, np.linalg.pinv(b)), np.zeros((2,1))), axis=1)
+    tmp2 = np.concatenate((np.dot(c, np.linalg.pinv(b)), np.zeros((2, 1))), axis=1)
     h = np.vstack((tmp2, [0, 0, 1]))
     h = np.dot(np.linalg.inv(c2), np.dot(h, c1))
 
