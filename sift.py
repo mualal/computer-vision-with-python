@@ -30,7 +30,6 @@ def plot_sift_points(
         y = d / 2 * np.sin(t) + c[1]
         plt.plot(x, y, 'b', linewidth=2)
     
-    plt.figure()
     plt.imshow(gray_img)
     for point in keypoints:
         draw_circle((point.pt[0], point.pt[1]), point.size)
