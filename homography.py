@@ -1,4 +1,5 @@
 import numpy as np
+import ransac
 
 
 def normalize(
@@ -76,3 +77,56 @@ def haffine_from_points(
     h = np.dot(np.linalg.inv(c2), np.dot(h, c1))
 
     return h / h[2, 2]
+
+
+class RansacModel:
+
+    def __init__(
+        self,
+        debug=False
+    ):
+        self.debug = debug
+    
+    def fit(
+        self,
+        data: np.ndarray
+    ) -> np.ndarray:
+        data = data.T
+        from_points = data[:3, :4]
+        to_points = data[3:, :4]
+        return h_from_points(from_points, to_points)
+
+    def get_error(
+        self,
+        data: np.ndarray,
+        h: np.ndarray
+    ) -> np.ndarray:
+        data = data.T
+        from_points = data[:3]
+        to_points = data[3:]
+
+        from_points_transformed = np.dot(h, from_points)
+        for i in range(3):
+            from_points_transformed[i] /= from_points_transformed[2]
+        
+        return np.sqrt(np.sum((to_points - from_points_transformed)**2, axis=0))
+
+
+def h_from_ransac(
+    from_points: np.ndarray,
+    to_points: np.ndarray,
+    model: RansacModel,
+    max_iter=1000,
+    match_threshold=10
+) -> tuple:
+    data = np.vstack((from_points, to_points))
+    h, ransac_data = ransac.ransac(
+        data=data.T,
+        model=model,
+        n=4,
+        k=max_iter,
+        t=match_threshold,
+        d=10,
+        return_all=True
+    )
+    return h, ransac_data['inliers']

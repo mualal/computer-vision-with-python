@@ -9,7 +9,7 @@ def find_sift_points_and_descriptors(
 ) -> tuple:
     sift = cv.SIFT_create()
     keypoints, des = sift.detectAndCompute(img, None)
-    return keypoints, des
+    return np.array(keypoints), des
 
 
 def plot_sift_points(
