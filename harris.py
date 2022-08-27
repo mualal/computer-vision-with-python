@@ -1,4 +1,3 @@
-import enum
 import numpy as np
 from scipy.ndimage import filters
 import matplotlib.pyplot as plt
