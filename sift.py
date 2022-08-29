@@ -7,6 +7,12 @@ import matplotlib.pyplot as plt
 def find_sift_points_and_descriptors(
     img: np.ndarray
 ) -> tuple:
+    """
+    SIFT (детектор особых точек и дескриптор) ----- SIFT = масштабно-инвариантное преобразование
+    признаков 
+    @param img: изображение, для которого требуется найти SIFT особые точки и дескрипторы
+    @return: 
+    """
     sift = cv.SIFT_create()
     keypoints, des = sift.detectAndCompute(img, None)
     return np.array(keypoints), des
@@ -16,6 +22,12 @@ def plot_sift_points(
     image_path: str,
     size: tuple,
 ) -> None:
+    """
+    отметить особые точки SIFT на изображении
+    @param image_path: путь к изображению
+    @param size: размер, к которому требуется привести изображение перед поиском особых точек
+    @return: None
+    """
     gray_img = np.array(Image.open(image_path).resize(size).convert('L'))
     # gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
 
@@ -39,6 +51,13 @@ def match(
     desc1: np.ndarray,
     desc2: np.ndarray,
 ) -> np.ndarray:
+    """
+    для каждого дескриптора на первом изображении найти соответствующий
+    ему на втором изображении
+    @param desc1: дескрипторы первого изображения
+    @param desc2: дескрипторы второго изображения
+    @return: массив индикаторов сходства дескрипторов
+    """
     desc1 = np.array([d / np.linalg.norm(d) for d in desc1])
     desc2 = np.array([d / np.linalg.norm(d) for d in desc2])
     dist_ratio = 0.6
@@ -58,6 +77,12 @@ def match_twosided(
     desc1: np.ndarray,
     desc2: np.ndarray,
 ) -> np.ndarray:
+    """
+    двусторонняя версия поиска соответствий между дескрипторами двух изображений
+    @param desc1: дескрипторы первого изображения
+    @param desc2: дескрипторы второго изображения
+    @return: массив индикаторов сходства дескрипторов
+    """
     matches_12 = match(desc1, desc2)
     matches_21 = match(desc2, desc1)
     ndx_12 = matches_12.nonzero()[0]
@@ -97,6 +122,7 @@ def plot_matches(
     locs2: list,
     matchscores: list,
     show_below=True,
+    save_to_file=False
 ) -> None:
     """
     вывод изображения, на котором соответственные точки соединены друг с другом
@@ -106,6 +132,7 @@ def plot_matches(
     @param locs2: координаты особых точек на втором изображении
     @param matchscores: результат функции match_descriptors
     @param show_below: необходимо ли показать исходные изображения под картиной соответствия
+    @return: None
     """
     plt.figure()
     plt.gray()
@@ -116,6 +143,8 @@ def plot_matches(
     cols1 = im1.shape[1]
     for i, m in enumerate(matchscores):
         if m > 0:
-            plt.plot([locs1[i][1], locs2[m][1] + cols1], [locs1[i][0], locs2[m][0]], 'c')
+            plt.plot([locs1[i][1], locs2[m][1] + cols1], [locs1[i][0], locs2[m][0]], 'c', linewidth=0.5)
     plt.axis('off')
+    if save_to_file:
+        plt.savefig(save_to_file, dpi=1000)
     plt.show()
