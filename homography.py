@@ -5,6 +5,11 @@ import ransac
 def normalize(
     points: np.ndarray,
 ) -> np.ndarray:
+    """
+    нормировать массив точек в однородных координатах так, чтобы последняя строка была равна 1
+    @param points: массив точек
+    return: нормированный массив точек
+    """
     for row in points:
         row /= points[-1]
     return points
@@ -13,12 +18,22 @@ def normalize(
 def make_homog(
     points: np.ndarray
 ) -> np.ndarray:
+    """
+    преобразовать массив точек в однородные координаты (точки хранятся в массиве по столбцам)
+    @param points: массив точек в декартовых координатах
+    return: массив точек в однородных координатах
+    """
     return np.vstack((points, np.ones((1, points.shape[1]))))
 
 
 def better_cond(
     matrix: np.ndarray
 ) -> tuple:
+    """
+    обеспечить хорошую обусловленность
+    @param matrix: массив точек
+    @return: массив точек после обусловливания и матрица, необходимая для обратного преобразования
+    """
     m = np.mean(matrix[:2], axis=1)
     max_std = max(np.std(matrix[:2], axis=1)) + 1e-9
     c = np.diag([1 / max_std, 1 / max_std, 1])
@@ -31,6 +46,13 @@ def h_from_points(
     from_points: np.ndarray,
     to_points: np.ndarray,
 ) -> np.ndarray:
+    """
+    найти гомографию H (общего вида), отображающую точки from_points в точки to_points
+    (методом прямого линейного преобразования DLT)
+    @param from_points: координаты отображаемых точек
+    @param to_points: координаты точек, на которые отображаем
+    @return: гомография H
+    """
     assert from_points.shape == to_points.shape
 
     # обеспечивает хорошую обусловленность для первого изображения
@@ -59,6 +81,13 @@ def haffine_from_points(
     from_points: np.ndarray,
     to_points: np.ndarray,
 ) -> np.ndarray:
+    """
+    найти гомографию H (аффинную), отображающую точки from_points в точки to_points
+    (методом прямого линейного преобразования DLT)
+    @param from_points: координаты отображаемых точек
+    @param to_points: координаты точек, на которые отображаем
+    @return: гомография H
+    """
     assert from_points.shape == to_points.shape
 
     # для первого изображения
