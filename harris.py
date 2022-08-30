@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.ndimage import filters
+from scipy import ndimage
 import matplotlib.pyplot as plt
 
 
@@ -16,14 +16,14 @@ def compute_harris_response(
     """
     # производные
     im_x = np.zeros(im.shape)
-    filters.gaussian_filter(im, (sigma, sigma), (0, 1), im_x)
+    ndimage.gaussian_filter(im, (sigma, sigma), (0, 1), im_x)
     im_y = np.zeros(im.shape)
-    filters.gaussian_filter(im, (sigma, sigma), (1, 0), im_y)
+    ndimage.gaussian_filter(im, (sigma, sigma), (1, 0), im_y)
 
     # элементы матрицы Харриса
-    W_xx = filters.gaussian_filter(im_x * im_x, sigma)
-    W_xy = filters.gaussian_filter(im_x * im_y, sigma)
-    W_yy = filters.gaussian_filter(im_y * im_y, sigma)
+    W_xx = ndimage.gaussian_filter(im_x * im_x, sigma)
+    W_xy = ndimage.gaussian_filter(im_x * im_y, sigma)
+    W_yy = ndimage.gaussian_filter(im_y * im_y, sigma)
 
     # определитель и след матрицы
     W_det = W_xx * W_yy - W_xy**2
@@ -40,20 +40,22 @@ def get_harris_points(
     """
     находит координаты углов
     @param harris_im: изображение, построенное по функции отклика Харриса (в виде numpy-массива)
-    @param min_dist: минимальное количество пикселей между соседними углами
-    @param threshold: отсечка
+    @param min_dist: минимальное необходимое количество пикселей между соседними углами
+    @param threshold: отсечка (порог функции отклика, при преодолении которого
+    рассматриваемый пиксель считается углом (найденной особой точкой))
     @return: список с координатами найденных углов
     """
     # точки-координаты, для которых функция отклика больше порога
     corner_threshold = harris_im.max() * threshold
-    harris_im_detect = harris_im > corner_threshold
+    harris_im_detect = harris_im >= corner_threshold
     # координаты кандидатов
     coords = np.array(harris_im_detect.nonzero()).T
     # значения кандидатов
     candidate_values = [harris_im[c[0], c[1]] for c in coords]
     # сортировка кандидатов
     index = np.argsort(candidate_values)
-    # запись данных о точках-кандидатах в массив
+    # создание массива областей, в которых может быть новый угол (на основе 
+    # минимально необходимого количества пикселей между соседними углами)
     allowed_locations = np.zeros(harris_im.shape)
     allowed_locations[min_dist:-min_dist, min_dist:-min_dist] = 1
     # выбор углов с учётом минимального количества пикселей между ними
@@ -77,12 +79,13 @@ def plot_harris_points(
     вывод изображения с углами, координаты которых заданы
     @param image: исходное изображение в виде numpy-массива
     @param filtered_coords: координаты углов
+    @return: None
     """
     plt.figure()
     plt.gray()
     plt.imshow(image)
     # добавление найденных углов
-    plt.plot([p[1] for p in filtered_coords], [p[0] for p in filtered_coords], '*')
+    plt.plot([p[1] for p in filtered_coords], [p[0] for p in filtered_coords], '.', color='red', linewidth=0.5)
     plt.axis('off')
     plt.show()
 
@@ -94,11 +97,10 @@ def get_descriptors(
 ) -> list:
     """
     для каждой точки возвращает значения пикселей в окрестности этой точки шириной 2 * wid + 1
-    (предполагается, что выбирались точки с min_distance > wid)
     @param image: исходное изображение в виде numpy-массива
     @param filtered_coords: координаты углов
     @param wid: полудлина окна (блока изображения)
-    @return: список дескрипторов
+    @return: список сглаженных дескрипторов
     """
     desc = []
     for coords in filtered_coords:
