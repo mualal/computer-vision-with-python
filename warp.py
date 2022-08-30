@@ -125,3 +125,68 @@ def plot_mesh(
         t_ext = [t[0], t[1], t[2], t[0]]
         plt.plot(x[t_ext], y[t_ext], 'blue', linewidth=0.1)
 
+
+def panorama(
+    h,
+    from_im,
+    to_im,
+    padding=2400,
+    delta=2400
+):
+    is_color = len(from_im.shape) == 3
+
+    def transf(
+        p
+    ):
+        p2 = np.dot(h, [p[0], p[1], 1])
+        return (p2[0] / p2[2], p2[1] / p2[2])
+    
+    if h[1, 2] < 0:
+        print('warp-right')
+        if is_color:
+            to_im_t = np.hstack((to_im, np.zeros((to_im.shape[0], padding, 3))))
+            from_im_t = np.zeros((to_im.shape[0], to_im.shape[1] + padding, to_im.shape[2]))
+            for col in range(3):
+                from_im_t[:, :, col] = ndimage.geometric_transform(
+                    from_im[:, :, col],
+                    transf,
+                    (to_im.shape[0], to_im.shape[1]+padding)
+                )
+        else:
+            to_im_t = np.hstack((to_im, np.zeros((to_im.shape[0], padding))))
+            from_im_t = ndimage.geometric_transform(
+                from_im,
+                transf,
+                (to_im.shape[0], to_im.shape[1]+padding)
+            )
+    else:
+        print('warp-left')
+        h_delta = np.array([[1, 0, 0], [0, 1, -delta], [0, 0, 1]])
+        h = np.dot(h, h_delta)
+
+        if is_color:
+            to_im_t = np.hstack((np.zeros((to_im.shape[0], padding, 3)), to_im))
+            from_im_t = np.zeros((to_im.shape[0], to_im.shape[1] + padding, to_im.shape[2]))
+            for col in range(3):
+                from_im_t[:, :, col] = ndimage.geometric_transform(
+                    from_im[:, :, col],
+                    transf,
+                    (to_im.shape[0], to_im.shape[1]+padding)
+                )
+        else:
+            to_im_t = np.hstack((np.zeros((to_im.shape[0], padding)), to_im))
+            from_im_t = ndimage.geometric_transform(
+                from_im,
+                transf,
+                (to_im.shape[0], to_im.shape[1]+padding)
+            )
+    
+    if is_color:
+        alpha = ((from_im_t[:, :, 0] * from_im_t[:, :, 1] * from_im_t[:, :, 2]) > 0)
+        for col in range(3):
+            to_im_t[:, :, col] = from_im_t[:, :, col] * alpha + to_im_t[:, :, col] * (1 - alpha)
+    else:
+        alpha = (from_im_t > 0)
+        to_im_t = from_im_t * alpha + to_im_t * (1 - alpha)
+    
+    return to_im_t
